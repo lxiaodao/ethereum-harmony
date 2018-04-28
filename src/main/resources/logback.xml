@@ -15,7 +15,9 @@
 
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%d{HH:mm:ss.SSS} %p [%c{1}]  %m%n</pattern>
+            <!--  <pattern>%d{HH:mm:ss.SSS} %p [%c{1}]  %m%n</pattern> -->
+            
+             <pattern>%p [%d{yyyy-MM-dd HH:mm:ss,SSS}] %c.%M\(%line\) - [%t] - %m%n</pattern>
         </encoder>
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
             <level>INFO</level>
@@ -32,7 +34,10 @@
             <totalSizeCap>500MB</totalSizeCap>
         </rollingPolicy>
         <encoder>
+        <!--  
             <pattern>%d{HH:mm:ss.SSS} %p [%c{1}]  %m%n</pattern>
+            -->
+             <pattern>%p [%d{yyyy-MM-dd HH:mm:ss,SSS}] %c.%M\(%line\) - [%t] - %m%n</pattern>
         </encoder>
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
             <level>TRACE</level>

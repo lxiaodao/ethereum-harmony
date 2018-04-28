@@ -120,7 +120,7 @@
                 $scope.addresses = data.addresses;
             }, 10);
 
-            $http({
+           /* $http({
                 method: 'GET',
                 url: 'https://coinmarketcap-nexuist.rhcloud.com/api/eth'
             }).then(function(result) {
@@ -131,7 +131,8 @@
                     // silent
                     console.log('Problem loading market value of ETH. ' + e)
                 }
-            })
+            })*/
+            
         });
 
 

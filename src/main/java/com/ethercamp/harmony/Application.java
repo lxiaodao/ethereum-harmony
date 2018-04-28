@@ -19,9 +19,14 @@
 package com.ethercamp.harmony;
 
 import com.ethercamp.harmony.config.EthereumHarmonyConfig;
+
+import lombok.extern.slf4j.Slf4j;
+
 import org.ethereum.Start;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.facade.Ethereum;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -33,10 +38,15 @@ import java.util.Optional;
 
 import static java.util.Arrays.asList;
 
+import java.util.Arrays;
+
+
 @SpringBootApplication
 @EnableScheduling
 @Import({EthereumHarmonyConfig.class})
+@Slf4j(topic = "harmony")
 public class Application {
+	 //private static final Logger log = LoggerFactory.getLogger("harmony");
 
     /**
      * Does one of:
@@ -44,14 +54,17 @@ public class Application {
      * - perform action and exit on completion.
      */
     public static void main(String[] args) throws Exception {
+    	log.debug("=====================application starting==================");
+    	log.debug("=====================the args are=================="+Arrays.toString(args));
         final List<String> actions = asList("importBlocks");
 
+        
         final Optional<String> foundAction = asList(args).stream()
                 .filter(arg -> actions.contains(arg))
                 .findFirst();
 
         if (foundAction.isPresent()) {
-            foundAction.ifPresent(action -> System.out.println("Performing action: " + action));
+            foundAction.ifPresent(action -> log.debug("Performing action: " + action));
             Start.main(args);
             // system is expected to exit after action performed
         } else {

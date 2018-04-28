@@ -36,12 +36,13 @@
  * which sets 3.5 GB.
  */
 
-ext.maxHeapSize = '-Xmx1500m' // default is 1G, but could be changed via command line or launched task type
+ext.maxHeapSize = '-Xmx3072m' // default is 1G, but could be changed via command line or launched task type
 
 buildscript {
     repositories {
+        maven {url "http://maven.aliyun.com/nexus/content/groups/public/"}
         mavenCentral()
-        maven { url "https://plugins.gradle.org/m2/" }
+        //maven { url "https://plugins.gradle.org/m2/" }
     }
 
     dependencies {
@@ -66,15 +67,16 @@ if (project.hasProperty('useMavenLocal')) {
 }
 
 repositories {
+     //maven {url "http://maven.aliyun.com/nexus/content/groups/public/"}
 
 //    mavenLocal()
     jcenter()
 
     mavenCentral()
 
-    maven { url "https://oss.jfrog.org/libs-snapshot/" }
-    maven { url "https://dl.bintray.com/ethereum/maven/" }
-    maven { url "https://repo.spring.io/libs-snapshot" }
+   maven { url "https://oss.jfrog.org/libs-snapshot/" }
+   maven { url "https://dl.bintray.com/ethereum/maven/" }
+   maven { url "https://repo.spring.io/libs-snapshot" }
 }
 
 dependencies {
@@ -265,7 +267,9 @@ task runPrivate() {
 task runClassic() {
     doLast {
         addJvmArgIfEmpty "sync.fast.enabled", "true"
+	
         bootRunWithNetworkConfig('classic', true)
+
     }
 }
 
@@ -302,8 +306,14 @@ def bootRunWithNetworkConfig(String name, boolean includePresets) {
     def newArgs = []
     if (includePresets) {
         addJvmArgIfEmpty "database.dir", getDatabaseDir("database-" + name)
+	// change by lxiaodao 201803014
+	// "ethereumj.conf.res", "E:/business/classic.conf"
+	def conf_name=name;
+	if(name=='classic'){
+           conf_name='E:/business/classic';
+	}
         newArgs.addAll([
-                '-Dethereumj.conf.res=' + name + '.conf',
+                '-Dethereumj.conf.res=' + conf_name + '.conf',
                 '-Ddatabase.name=database-' + name,
                 '-DnetworkProfile=' + name])
     }

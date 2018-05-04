@@ -21,3 +21,8 @@ access.info
 
 # Local configuration
 **/user.conf
+# add
+.classpath
+.project
+/bin/
+/.settings/

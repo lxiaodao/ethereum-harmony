@@ -4,11 +4,7 @@
     <!--
         If variable is not defined in system properties -> try to load it from application.properties
     -->
-    <if condition='!isDefined("logs.dir")'>
-        <then>
-            <property resource="application.properties" />
-        </then>
-    </if>
+  
 
     <!-- Be sure to flush latest logs on exit -->
     <shutdownHook class="ch.qos.logback.core.hook.DelayingShutdownHook"/>
@@ -23,10 +19,10 @@
     </appender>
 
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${logs.dir}/harmony.log</file>
+        <file>logs/harmony.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <!-- rollover hourly -->
-            <fileNamePattern>${logs.dir}/harmony-%d{yyyy-MM-dd_HH}.log.zip</fileNamePattern>
+            <fileNamePattern>logs/harmony-%d{yyyy-MM-dd_HH}.log.zip</fileNamePattern>
             <!-- ~1 month -->
             <maxHistory>720</maxHistory>
             <totalSizeCap>500MB</totalSizeCap>

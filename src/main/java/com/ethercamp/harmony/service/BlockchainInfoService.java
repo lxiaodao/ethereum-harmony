@@ -243,6 +243,7 @@ public class BlockchainInfoService implements ApplicationListener {
             if (!config.getConfig().hasPath("logs.keepStdOut") || !config.getConfig().getBoolean("logs.keepStdOut")) {
                 createLogAppenderForMessaging();
             }
+           
         }
     }
 

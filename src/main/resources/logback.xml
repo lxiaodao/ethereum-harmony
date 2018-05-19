@@ -19,7 +19,7 @@
     </appender>
 
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>logs/harmony.log</file>
+        <file>E:/stsworkspace/ethereum-harmony/logs/logs/harmony.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <!-- rollover hourly -->
             <fileNamePattern>logs/harmony-%d{yyyy-MM-dd_HH}.log.zip</fileNamePattern>

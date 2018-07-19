@@ -18,22 +18,32 @@
 
 package com.ethercamp.harmony.web.controller;
 
-import com.ethercamp.contrdata.storage.StorageEntry;
-import com.ethercamp.harmony.model.dto.ActionStatus;
-import com.ethercamp.harmony.model.dto.ContractObjects.*;
-import com.ethercamp.harmony.service.ContractsService;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.util.List;
-
 import static com.ethercamp.harmony.model.dto.ActionStatus.createErrorStatus;
 import static com.ethercamp.harmony.model.dto.ActionStatus.createSuccessStatus;
 import static org.apache.commons.lang3.StringUtils.lowerCase;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.ethercamp.contrdata.storage.StorageEntry;
+import com.ethercamp.harmony.model.dto.ActionStatus;
+import com.ethercamp.harmony.model.dto.ContractObjects.ContractInfoDTO;
+import com.ethercamp.harmony.model.dto.ContractObjects.IndexStatusDTO;
+import com.ethercamp.harmony.service.ContractsService;
+import com.ethercamp.harmony.service.contracts.ContractHandler;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Created by Stan Reshetnyk on 18.10.16.
@@ -44,6 +54,24 @@ public class ContractsController {
 
     @Autowired
     ContractsService contractsService;
+    
+    
+    //add by liuyang 20180719
+    @Autowired
+    ContractHandler contractHandler;
+
+    @RequestMapping("/contracts/loadContracts/{name}")
+    @ResponseBody
+    public String loadContracts(@PathVariable String name) {
+        try {
+			contractHandler.initContracts();
+		} catch (Exception e) {
+			log.error("loadContracts error", e);
+			return "error";
+		}
+        
+        return "success";
+    }
 
     @RequestMapping("/contracts/{address}/storage")
     public Page<StorageEntry> getContractStorage(@PathVariable String address,

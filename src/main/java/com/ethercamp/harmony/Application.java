@@ -67,6 +67,8 @@ public class Application {
             if (!SystemProperties.getDefault().blocksLoader().equals("")) {
                 ethereum.getBlockLoader().loadBlocks();
             }
+            
+            
         }
     }
 }

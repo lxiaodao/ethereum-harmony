@@ -12,6 +12,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
@@ -29,6 +31,8 @@ import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.ethercamp.harmony.jsonrpc.TypeConverter;
+
 /**
  * @author yang
  *
@@ -38,7 +42,9 @@ public class ContractHandler {
 	
 	
 	 public static final Logger LOG = LoggerFactory.getLogger(ContractHandler.class);
-	 protected final byte[] senderPrivateKey = sha3("cow".getBytes());
+	 protected final byte[] senderPrivateKey = sha3("flow".getBytes());
+	 //flow -> cow
+	 
 	    // sender address is derived from the private key
 	    protected final byte[] senderAddress = ECKey.fromPrivate(senderPrivateKey).getAddress();
 	    @Autowired
@@ -75,7 +81,11 @@ public class ContractHandler {
 	        }
 
 	        LOG.info("Sending contract to net and waiting for inclusion");
-	        TransactionReceipt receipt = sendTxAndWait(new byte[0], Hex.decode(metadata.bin));
+	        
+	        //-> cow  0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826
+	        //byte[] toaddress=ByteUtil.hexStringToBytes(fromHex("0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826"));
+	        byte[] toaddress=TypeConverter.StringHexToByteArray("0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826");
+	        TransactionReceipt receipt = sendTxAndWait(toaddress, Hex.decode(metadata.bin));
 
 	        if (!receipt.isSuccessful()) {
 	        	LOG.error("Some troubles creating a contract: " + receipt.getError());
@@ -102,21 +112,30 @@ public class ContractHandler {
 	        LOG.info("Current contract data member value: " + ret[0]);*/
 	    }
 
-	    protected TransactionReceipt sendTxAndWait(byte[] receiveAddress, byte[] data) throws InterruptedException {
+	    protected TransactionReceipt sendTxAndWait(byte[] receiveAddress, byte[] data) throws InterruptedException, ExecutionException {
 	        BigInteger nonce = ethereum.getRepository().getNonce(senderAddress);
+	        
+	        LOG.info(senderAddress+"------the nonce is------"+nonce);
+	        
+	        
+	        long currentGas=ethereum.getGasPrice();
+	        LOG.info("------the current gasprice is------"+currentGas);
+	        
 	        Transaction tx = new Transaction(
 	                ByteUtil.bigIntegerToBytes(nonce),
-	                ByteUtil.longToBytesNoLeadZeroes(ethereum.getGasPrice()),
+	                ByteUtil.longToBytesNoLeadZeroes(currentGas),
 	                ByteUtil.longToBytesNoLeadZeroes(3_000_000),
 	                receiveAddress,
-	                ByteUtil.longToBytesNoLeadZeroes(0),
+	                ByteUtil.longToBytesNoLeadZeroes(1),
 	                data,
 	                ethereum.getChainIdForNextBlock());
 	        tx.sign(ECKey.fromPrivate(senderPrivateKey));
 	        LOG.info("<=== Sending transaction: " + tx);
-	        ethereum.submitTransaction(tx);
+	        
+	        Future<Transaction> future=ethereum.submitTransaction(tx);
 
-	        return waitForTx(tx.getHash());
+	        //return waitForTx(tx.getHash());
+	        return waitForTx(future.get().getHash());
 	    }
 
 	    private void onBlock(Block block, List<TransactionReceipt> receipts) {
@@ -140,13 +159,16 @@ public class ContractHandler {
 	            if (receipt != null) {
 	                return receipt;
 	            } else {
-	                long curBlock = ethereum.getBlockchain().getBestBlock().getNumber();
+	            	long curBlock = ethereum.getBlockchain().getBestBlock().getNumber();
+	               /* 
 	                if (curBlock > startBlock + 16) {
 	                    throw new RuntimeException("The transaction was not included during last 16 blocks: " + txHashW.toString().substring(0,8));
 	                } else {
 	                    LOG.info("Waiting for block with transaction 0x" + txHashW.toString().substring(0,8) +
 	                            " included (" + (curBlock - startBlock) + " blocks received so far) ...");
-	                }
+	                }*/
+	            	  LOG.info("Waiting for block with transaction 0x" + txHashW.toString().substring(0,8) +
+	                            " included (" + (curBlock - startBlock) + " blocks received so far) ...");
 	            }
 	            synchronized (this) {
 	                wait(20000);

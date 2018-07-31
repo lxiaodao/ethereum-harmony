@@ -59,12 +59,26 @@ public class ContractsController {
     //add by liuyang 20180719
     @Autowired
     ContractHandler contractHandler;
+    
+    @RequestMapping("/contracts/excute/{name}")
+    @ResponseBody
+    public String excuteContract(@PathVariable String name) throws Exception {
+    	String result="";
+    	try {
+			result=contractHandler.excuteTheMethodOfContract(name,777);
+		} catch (Exception e) {
+			log.error("excuteContractDemo error", e);
+			throw e;
+		}
+    	return result;
+    	
+    }
 
     @RequestMapping("/contracts/loadContracts/{name}")
     @ResponseBody
     public String loadContracts(@PathVariable String name) {
         try {
-			contractHandler.initContracts();
+			contractHandler.initContracts(name);
 		} catch (Exception e) {
 			log.error("loadContracts error", e);
 			return "error";

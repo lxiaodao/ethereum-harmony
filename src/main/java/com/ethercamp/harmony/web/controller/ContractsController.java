@@ -60,12 +60,17 @@ public class ContractsController {
     @Autowired
     ContractHandler contractHandler;
     
-    @RequestMapping("/contracts/excute/{name}")
+    @RequestMapping("/contracts/excute/{contractName}/{contractHash}/{method}")
     @ResponseBody
-    public String excuteContract(@PathVariable String name) throws Exception {
+    public String excuteContract(@PathVariable String contractName,@PathVariable String contractHash,@PathVariable String method) throws Exception {
     	String result="";
     	try {
-			result=contractHandler.excuteTheMethodOfContract(name,777);
+    		if("ri".equals(contractName)) {
+			    result=contractHandler.excuteTheMethodOfContract(contractHash,method,777);
+    		}else {
+    			result=contractHandler.excuteContractSample(contractHash, method, null);
+    			
+    		}
 		} catch (Exception e) {
 			log.error("excuteContractDemo error", e);
 			throw e;
@@ -73,18 +78,18 @@ public class ContractsController {
     	return result;
     	
     }
-
+    // Add by lxiaodao 
     @RequestMapping("/contracts/loadContracts/{name}")
     @ResponseBody
     public String loadContracts(@PathVariable String name) {
         try {
-			contractHandler.initContracts(name);
+			
+        	return contractHandler.initContracts(name);
 		} catch (Exception e) {
 			log.error("loadContracts error", e);
 			return "error";
 		}
-        
-        return "success";
+    
     }
 
     @RequestMapping("/contracts/{address}/storage")

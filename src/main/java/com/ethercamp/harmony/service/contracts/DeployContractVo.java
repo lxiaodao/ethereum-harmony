@@ -19,12 +19,14 @@ import lombok.NoArgsConstructor;
 public class DeployContractVo {
 	
 	private String txhash;
+	private String contractAddress;
 	private String code;
 	
-	public DeployContractVo(String txhash, String code) {
+	public DeployContractVo(String txhash, String code,String contractHash) {
 		super();
 		this.txhash = txhash;
 		this.code = code;
+		this.contractAddress=contractHash;
 	}
 	
 

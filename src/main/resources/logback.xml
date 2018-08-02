@@ -32,7 +32,7 @@
             <totalSizeCap>500MB</totalSizeCap>
         </rollingPolicy>
         <encoder>
-            <pattern>%d{HH:mm:ss.SSS} %p [%c{1}]  %m%n</pattern>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
             <level>TRACE</level>
@@ -92,6 +92,7 @@
     <logger level="DEBUG" name="com.ethercamp.harmony"/>
 
     <!-- Contract data -->
+ 
     <logger level="INFO" name="web-profiler"/>
     <logger level="DEBUG" name="block-saver"/>
     <logger level="DEBUG" name="batch-size-adviser"/>

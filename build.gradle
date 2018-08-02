@@ -96,7 +96,8 @@ dependencies {
 //    compile "com.google.guava:guava:19.0"
 
     // Be sure also change value inside `ContractsTests.java`
-    compile "org.ethereum:solcJ-all:0.4.8"                   // Solidity Compiler win/mac/linux binaries
+    // compile "org.ethereum:solcJ-all:0.4.8"                   // Solidity Compiler win/mac/linux binaries
+     compile "org.ethereum:solcJ-all:0.4.10"  
 
     // don't forget to adjust {ethereumJ.version} in application.properties
     compile ("org.ethereum:ethereumj-core:1.7.2-RELEASE") {

@@ -1,6 +1,4 @@
-
 pragma solidity ^0.4.8;
-
 contract RI {
     // The keyword "public" makes those variables
     // readable from outside.

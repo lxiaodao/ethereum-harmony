@@ -4,12 +4,15 @@
 package com.ethercamp.harmony.service.contracts;
 
 import static org.ethereum.crypto.HashUtil.sha3;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -19,6 +22,7 @@ import java.util.concurrent.Future;
 
 import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
+import org.ethereum.core.PendingStateImpl;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.crypto.ECKey;
@@ -38,6 +42,9 @@ import org.springframework.stereotype.Component;
 import com.ethercamp.harmony.jsonrpc.JsonRpc;
 import com.ethercamp.harmony.jsonrpc.TransactionReceiptDTO;
 import com.ethercamp.harmony.jsonrpc.TypeConverter;
+import com.ethercamp.harmony.util.ToJson;
+
+import lombok.extern.java.Log;
 
 /**
  * @author yang
@@ -48,16 +55,17 @@ public class ContractHandler {
 	
 	
 	 public static final Logger LOG = LoggerFactory.getLogger(ContractHandler.class);
-	 protected final byte[] senderPrivateKey = sha3("flow".getBytes());
+	 protected final byte[] senderPrivateKey = sha3("cow".getBytes());
 	 //flow -> cow
 	 
 	    // sender address is derived from the private key
 	    protected final byte[] senderAddress = ECKey.fromPrivate(senderPrivateKey).getAddress();
 	    @Autowired
-		 SolidityCompiler compiler;
+	    SolidityCompiler compiler;
+		@Autowired
+		protected Ethereum ethereum;
 		 @Autowired
-		 protected Ethereum ethereum;
-		 
+		PendingStateImpl pendingState;
 		 
 		 
 		 String contract =
@@ -70,7 +78,50 @@ public class ContractHandler {
 		            "    return i;" +
 		            "  }" +
 		            "}";
+        String ri_coin="pragma solidity ^0.4.8;"+
+                       "contract RI {"+
+        		       "    address public minter;"+
+                       "    mapping (address => uint) public balances;"+
+        		       "    event Sent(address from, address to, uint amount);"+
+                       "    function RI() public {" + 
+                       "        minter = msg.sender;" + 
+                       "    }"+
+                       "    function mint(address receiver, uint amount) public {" + 
+                       "        if (msg.sender != minter) return;" + 
+                       "        balances[receiver] += amount;" + 
+                       "    }"+
+                       "    function send(address receiver, uint amount) public {" + 
+                       "        if (balances[msg.sender] < amount) return;" + 
+                       "        balances[msg.sender] -= amount;" + 
+                       "        balances[receiver] += amount;" + 
+                       "        Sent(msg.sender, receiver, amount);" + 
+                       "    }"+
+                       "}";
+        
+        /*
+        pragma solidity ^0.4.8;
+        contract RI {        
+            address public minter;
+            mapping (address => uint) public balances;
+            event Sent(address from, address to, uint amount);
+            function RI() public {
+                minter = msg.sender;
+            }
 
+            function mint(address receiver, uint amount) public {
+                if (msg.sender != minter) return;
+                balances[receiver] += amount;
+            }
+
+            function send(address receiver, uint amount) public {
+                if (balances[msg.sender] < amount) return;
+                balances[msg.sender] -= amount;
+                balances[receiver] += amount;
+                Sent(msg.sender, receiver, amount);
+            }
+        }
+        */
+   
 
 	    private Map<ByteArrayWrapper, TransactionReceipt> txWaiters =
 	            Collections.synchronizedMap(new HashMap<ByteArrayWrapper, TransactionReceipt>());
@@ -79,13 +130,16 @@ public class ContractHandler {
 	       JsonRpc jsonRpc;
 	    
 	    
-	    public void initContracts(String name) throws Exception {
+	    public String initContracts(String name) throws Exception {
 	      
 	    	 if("ri".equals(name)) {
+	    		 LOG.info("------loadRpcContract------"+name);
+	    		 //String contract_ri= ContractLoad.loadContractContent("contracts/ri.sol");
 	    		 
+	    		 return ToJson.toJson(loadRpcContract(ri_coin));
 	    	 }else {
-	    		 LOG.info("------loadRpcContract------");
-	    		 loadRpcContract(name);
+	    		 LOG.info("------loadRpcContract------sample");
+	    		 return ToJson.toJson(loadRpcContract(contract));
 	    	 }
 	    }
 	    
@@ -95,70 +149,144 @@ public class ContractHandler {
 	     * @return 
 	     * @throws Exception 
 	     */
-	    public DeployContractVo loadRpcContract(String name) throws Exception {
-	    	 String passphrase = "123";
-	    	  String cowAcct ="0xcd2a3d9f938e13cd947ec05abc7fe734df8dd826";
+	    public DeployContractVo loadRpcContract(String content) throws Exception {
+	    	 //String passphrase = "123";
+	    	 // String cowAcct ="0xcd2a3d9f938e13cd947ec05abc7fe734df8dd826";
+	    	 String cowAcct="0x5BCb15c095eAC6eDD57D49ff0D3eeb031DB3D51e"; //paul
+	    	 String passphrase = "paul";
 		     jsonRpc.personal_unlockAccount(cowAcct, passphrase, "");
-		     
+		          
+		    LOG.debug("------content of contract------");
+		    LOG.debug(content);
 		     //1.编译智能合约
-		     com.ethercamp.harmony.jsonrpc.JsonRpc.CompilationResult rpcResult=jsonRpc.eth_compileSolidity(contract);
-		    
-		     
-		    
+		     com.ethercamp.harmony.jsonrpc.JsonRpc.CompilationResult rpcResult=jsonRpc.eth_compileSolidity(content);
 		     JsonRpc.CallArguments ca = new JsonRpc.CallArguments();
 	            ca.from = cowAcct;
 	            ca.data = rpcResult.code;
 	            //2.计算需要的gas
 		     String hxgas=jsonRpc.eth_estimateGas(ca);
-		     
+		     LOG.info("------loadRpcContract hxgas------"+hxgas);
 	            ca.from = cowAcct;
 	            ca.gas= hxgas;
 	            ca.data = rpcResult.code;
 	            //3.部署合约
 		     String txhash=this.jsonRpc.eth_sendTransaction(ca);
+		     LOG.info("-------after send the contract,transaction hash------"+txhash);
+		     //挖矿，保证生产区块
+		     this.mineBlock();
+		     
+		     String contract_hash=null;
+		     if(txhash!=null) {
 		     TransactionReceiptDTO receipt=jsonRpc.eth_getTransactionReceipt(txhash);
-		     LOG.debug("------return the contract address-------"+receipt!=null?receipt.getContractAddress():null);	     
-		     
-		   	return new DeployContractVo(txhash,rpcResult.code);	     
-		}
-	    
-	    public String excuteTheMethodOfContract(String method,Object args) throws Exception {
-	    	
-	    	 String passphrase = "123";
-	    	  String cowAcct ="0xcd2a3d9f938e13cd947ec05abc7fe734df8dd826";
-		     jsonRpc.personal_unlockAccount(cowAcct, passphrase, "");
-		     
-		     if(method==null||"".equals(method)) {
-		    	 method="inc";
+		     contract_hash=receipt.getContractAddress();
+		       LOG.debug("------return the contract address-------"+(receipt!=null?receipt.getContractAddress():null));	  
 		     }
 		     
-		     //编译智能合约
-		     //com.ethercamp.harmony.jsonrpc.JsonRpc.CompilationResult compila=jsonRpc.eth_compileSolidity(contract);
-		    
-	   
-	    	//执行代码
-	   
+		   	return new DeployContractVo(txhash,rpcResult.code,contract_hash);	     
+		}
+	    /**
+	     * 执行智能合约的方法
+	     * @param address
+	     * @param method
+	     * @param args
+	     * @return
+	     * @throws Exception
+	     */
+	    public String excuteContractSample(String contractHash,String method,Object[] args) throws Exception {
+	    	 //cow
+	    	 //String passphrase = "123";
+	    	 //String cowAcct ="0xcd2a3d9f938e13cd947ec05abc7fe734df8dd826";
+	    	 
+	    	 String cowAcct="0x5BCb15c095eAC6eDD57D49ff0D3eeb031DB3D51e"; //paul
+	    	 String passphrase = "paul";
+	    	  
+		     jsonRpc.personal_unlockAccount(cowAcct, passphrase, "");     
+		     boolean isInc="inc".equals(method);		
+		  	     
+		     //执行代码	   
 	        JsonRpc.CallArguments ca = new JsonRpc.CallArguments();
             ca.from = cowAcct;
-            ca.data = TypeConverter.toJsonHex(CallTransaction.Function.fromSignature("inc","int").encodeArguments(88));
-            ca.to="0xda7ce79725418f4f6e13bf5f520c89cec5f6a974";
+            
+            method=isInc?method:"get";
+            LOG.debug("-------excuteContractSample method------"+method);
+           
+             byte[] send_data=null;
+             if(isInc) {
+            	 //没有返回值
+            	 send_data=CallTransaction.Function.fromSignature(method,"int").encode(125);
+             }else {
+            	 //get 返回int
+            	 send_data=CallTransaction.Function.fromSignature(method,new String[] {},new String[] {"int"}).encode();
+             }
+           
+            ca.data = TypeConverter.toJsonHex(send_data);
+            ca.to=contractHash; //contract address
+            
+            
+            String txhash_or_result="no";
+            
+            if(isInc) {
+            	txhash_or_result=this.jsonRpc.eth_sendTransaction(ca);
+            }else {
+            	
+            	 
+            	txhash_or_result=jsonRpc.eth_call(ca, "latest");
+            }
+           
+            LOG.info("------excuteContractSample result or hashtx------"+txhash_or_result);
+            
+     
+	    	return txhash_or_result;
+	    }
+	    /**
+	     * 执行智能合约的方法
+	     * @param address
+	     * @param method
+	     * @param args
+	     * @return
+	     * @throws Exception
+	     */
+	    public String excuteTheMethodOfContract(String contractHash,String method,Object args) throws Exception {
+	    	 //cow
+	    	 //String passphrase = "123";
+	    	 //String cowAcct ="0xcd2a3d9f938e13cd947ec05abc7fe734df8dd826";
+	    	 
+	    	 String cowAcct="0x5BCb15c095eAC6eDD57D49ff0D3eeb031DB3D51e"; //paul
+	    	 String passphrase = "paul";
+	    	  
+		     jsonRpc.personal_unlockAccount(cowAcct, passphrase, "");     
+		     boolean isSend="send".equals(method);		
+		     
+		     String to_address="0x823d22476F2041286C6e4657559AEe1daDF88A6F";//lxiaodao
+		     //监听sent
+		     if(isSend) {		    	 
+		    	 //
+		  
+		    	 CompilationResult.ContractMetadata metadata=this.getContractData(this.ri_coin);
+		    	 
+		    	 RIContractEventlistener eventListener=new RIContractEventlistener(this.pendingState,metadata.abi,TypeConverter.StringHexToByteArray(contractHash));
+		         this.ethereum.addListener(eventListener.listener);
+		         LOG.debug("------add RIContractEventlistener into ethereum------");
+		     
+		     }
+		     
+		     //执行代码	   
+	        JsonRpc.CallArguments ca = new JsonRpc.CallArguments();
+            ca.from = cowAcct;
+            // function mint(address receiver, uint amount) public 
+            //  function send(address receiver, uint amount) public 
+            // 挖矿 100 send 1
+            method=isSend?method:"mint";
+            LOG.debug("-------excuteTheMethodOfContract method------"+method);
+            Object[] values=new Object[]{isSend?to_address:cowAcct,isSend?1:100};
+            ca.from = cowAcct;
+            ca.data = TypeConverter.toJsonHex(CallTransaction.Function.fromSignature(method,new String[] {"address","uint"}).encode(values));
+            ca.to=contractHash; //contract address
             
             String txhash=this.jsonRpc.eth_sendTransaction(ca);
-            LOG.info("------the inc method excute hash------"+txhash);
-            
-                     
-          
-            JsonRpc.CallArguments ca_get = new JsonRpc.CallArguments();
-            ca_get.from = cowAcct;
-            ca_get.data = TypeConverter.toJsonHex(CallTransaction.Function.fromSignature("get").encode());
-            ca_get.to="0xda7ce79725418f4f6e13bf5f520c89cec5f6a974";
-            
-                     
-            
-            String resultof=jsonRpc.eth_call(ca_get, "pending");
-            LOG.info("------return result------"+resultof);
-	    	
-	    	return resultof;
+            LOG.info("------the excuteTheMethodOfContract method excute hash------"+txhash);
+     
+	    	return txhash;
 	    }
 	    
 	    JsonRpc.CallArguments createCall(String contractAddress, String functionName) {
@@ -188,29 +316,26 @@ public class ContractHandler {
             Thread.sleep(100);
             Object[] blocks = jsonRpc.eth_getFilterChanges(blockFilterId);
             cnt += blocks.length;
-            System.out.println(cnt + " blocks mined");
+            LOG.debug(cnt + " blocks mined");
             boolean b = jsonRpc.eth_uninstallFilter(blockFilterId);
             assertTrue(b);
             return hash1;
         }
 	    
-	    public CompilationResult.ContractMetadata getContractData(String name) throws IOException {
+	    public CompilationResult.ContractMetadata getContractData(String contractSourceCode) throws IOException {
 	    	LOG.info("Compiling contract...");
 	        
 	        SolidityCompiler.Result result = null;
-	        if("ri".equals(name)) {
-	        	result = compiler.compileSrc(this.loadContractFile("contracts/ri.sol"), true, true,
+	    
+	        	result = compiler.compileSrc(contractSourceCode.getBytes(), true, true,
 		                SolidityCompiler.Options.ABI, SolidityCompiler.Options.BIN);
-	        }else {
-	        	result = compiler.compileSrc(contract.getBytes(), true, true,
-		                SolidityCompiler.Options.ABI, SolidityCompiler.Options.BIN);
-	        	LOG.info("------load sample contract------");
-	        }
+	              
 	        
 	        if (result.isFailed()) {
 	            throw new RuntimeException("Contract compilation failed:\n" + result.errors);
 	        }
 	        CompilationResult res = CompilationResult.parse(result.output);
+	        LOG.debug("------compiled contract name------"+res.getContractName());
 	        if (res.getContracts().isEmpty()) {
 	            throw new RuntimeException("Compilation failed, no contracts returned:\n" + result.errors);
 	        }
@@ -220,6 +345,7 @@ public class ContractHandler {
 	        }
 
 	        LOG.info("Sending contract to net and waiting for inclusion");
+	        
 	        return metadata;
 	    }
 	    
@@ -363,6 +489,8 @@ public class ContractHandler {
 		  
 	        return new File(getClass().getClassLoader().getResource(path).getFile());
 	    }
+	  
+	 
 
 	
 
